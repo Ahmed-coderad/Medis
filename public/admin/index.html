@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login Admin — Data Kesehatan Peserta</title>
+<link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="login-card__mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="26" height="26"><path fill="currentColor" d="M11 2h2v9h9v2h-9v9h-2v-9H2v-2h9z"/></svg>
+    </div>
+    <h1>Panel Admin</h1>
+    <p class="login-card__desc">Masuk untuk mengelola data kesehatan &amp; kontak peserta.</p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+      </div>
+      <p id="loginError" class="login-error" hidden></p>
+      <button type="submit" class="btn btn--primary" id="loginBtn">Masuk</button>
+    </form>
+  </div>
+  <p class="login-footer">&copy; <span id="year"></span> Rizky Ahmed Darmawan. Seluruh hak cipta dilindungi.</p>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+const form = document.getElementById('loginForm');
+const errBox = document.getElementById('loginError');
+const btn = document.getElementById('loginBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errBox.hidden = true;
+  btn.disabled = true;
+  btn.textContent = 'Memeriksa...';
+  try {
+    const res = await fetch('/admin/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login gagal.');
+    window.location.href = '/admin/dashboard';
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.hidden = false;
+    btn.disabled = false;
+    btn.textContent = 'Masuk';
+  }
+});
+</script>
+</body>
+</html>
