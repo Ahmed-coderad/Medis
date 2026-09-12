@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel Admin — Data Kesehatan Peserta</title>
+<link rel="stylesheet" href="assets/css/admin.css" />
+</head>
+<body>
+
+<!-- ============ LOGIN VIEW ============ -->
+<div id="loginView" class="login-body">
+  <div class="login-card">
+    <div class="login-card__mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="26" height="26"><path fill="currentColor" d="M11 2h2v9h9v2h-9v9h-2v-9H2v-2h9z"/></svg>
+    </div>
+    <h1>Panel Admin</h1>
+    <p class="login-card__desc">Masuk untuk mengelola data kesehatan &amp; kontak peserta.</p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="username">Email admin</label>
+        <input type="email" id="username" name="username" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+      </div>
+      <p id="loginError" class="login-error" hidden></p>
+      <button type="submit" class="btn btn--primary" id="loginBtn">Masuk</button>
+    </form>
+  </div>
+  <p class="login-footer">&copy; <span id="yearLogin"></span> Rizky Ahmed Darmawan. Seluruh hak cipta dilindungi.</p>
+</div>
+
+<!-- ============ DASHBOARD VIEW ============ -->
+<div id="dashboardView" hidden>
+
+  <header class="adm-topbar">
+    <div class="adm-topbar__brand">
+      <span class="adm-topbar__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M11 2h2v9h9v2h-9v9h-2v-9H2v-2h9z"/></svg>
+      </span>
+      <span class="adm-topbar__title">Panel Admin</span>
+    </div>
+    <div class="adm-topbar__right">
+      <span id="adminName" class="adm-topbar__name"></span>
+      <button id="logoutBtn" class="btn btn--ghost btn--small">Keluar</button>
+    </div>
+  </header>
+
+  <main class="adm-wrap">
+
+    <section class="stats-grid" id="statsGrid"></section>
+
+    <section class="toolbar">
+      <input type="search" id="searchInput" placeholder="Cari nama, kelas, atau jurusan..." />
+      <select id="roleFilter">
+        <option value="">Semua peran</option>
+        <option value="Pengurus OSIS">Pengurus OSIS</option>
+        <option value="Peserta Umum">Peserta Umum</option>
+        <option value="Panitia">Panitia</option>
+      </select>
+      <select id="allergyFilter">
+        <option value="">Semua peserta</option>
+        <option value="drug">Alergi obat</option>
+        <option value="any">Punya alergi apapun</option>
+      </select>
+      <div class="toolbar__spacer"></div>
+      <button class="btn btn--ghost btn--small" id="exportCsvBtn">Ekspor CSV</button>
+      <button class="btn btn--primary btn--small" id="exportPdfBtn">Ekspor PDF (semua)</button>
+    </section>
+
+    <section class="table-wrap">
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>Kelas</th>
+            <th>Jurusan</th>
+            <th>Peran</th>
+            <th>Alergi</th>
+            <th>Masalah pribadi</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBody"></tbody>
+      </table>
+      <p id="emptyState" class="empty-state" hidden>Belum ada data peserta yang masuk.</p>
+      <p id="loadingState" class="empty-state">Memuat data...</p>
+    </section>
+  </main>
+
+  <!-- Detail modal -->
+  <div id="detailModal" class="modal" hidden>
+    <div class="modal__backdrop" id="modalBackdrop"></div>
+    <div class="modal__panel">
+      <div class="modal__header">
+        <h3 id="modalTitle">Detail Peserta</h3>
+        <button id="modalClose" class="modal__close" aria-label="Tutup">✕</button>
+      </div>
+      <div class="modal__body" id="modalBody"></div>
+      <div class="modal__footer">
+        <button class="btn btn--ghost btn--small" id="deleteBtn">Hapus data</button>
+        <button class="btn btn--ghost btn--small" id="pdfBtn">Unduh PDF</button>
+        <button class="btn btn--primary btn--small" id="contactBtn">Hubungi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact modal -->
+  <div id="contactModal" class="modal" hidden>
+    <div class="modal__backdrop" id="contactBackdrop"></div>
+    <div class="modal__panel modal__panel--small">
+      <div class="modal__header">
+        <h3>Hubungi Peserta / Wali</h3>
+        <button id="contactModalClose" class="modal__close" aria-label="Tutup">✕</button>
+      </div>
+      <div class="modal__body" id="contactModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/vendor/firebase-app-compat.js"></script>
+<script src="assets/vendor/firebase-auth-compat.js"></script>
+<script src="assets/vendor/firebase-firestore-compat.js"></script>
+<script src="assets/vendor/jspdf.umd.min.js"></script>
+<script src="assets/js/firebase-init.js"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

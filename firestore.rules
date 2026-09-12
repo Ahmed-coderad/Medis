@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Peserta (data kesehatan & kontak)
+    match /participants/{participantId} {
+      // Siapapun (peserta) boleh MENGIRIM data baru lewat formulir publik,
+      // tapi tidak boleh membaca, mengubah, atau menghapus data siapapun.
+      allow create: if request.resource.data.full_name is string
+                    && request.resource.data.full_name.size() > 0
+                    && request.resource.data.class is string
+                    && request.resource.data.major is string
+                    && request.resource.data.role in ['Pengurus OSIS', 'Peserta Umum', 'Panitia']
+                    && request.resource.data.guardian_name is string
+                    && request.resource.data.guardian_phone is string;
+
+      // Hanya admin yang sudah login (Firebase Authentication) yang boleh
+      // membaca, mengubah, atau menghapus data peserta.
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // Catatan riwayat "hubungi" dari panel admin (opsional, untuk jejak audit)
+    match /contactLog/{logId} {
+      allow create, read: if request.auth != null;
+    }
+
+    // Tolak akses ke koleksi lain yang tidak didefinisikan di atas.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
