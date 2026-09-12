@@ -8,12 +8,14 @@
 // ini bukan kata sandi. Keamanan data sesungguhnya diatur oleh
 // firestore.rules (hanya admin yang login yang bisa membaca/mengubah data).
 const firebaseConfig = {
-  apiKey: "GANTI_DENGAN_API_KEY",
-  authDomain: "GANTI_DENGAN_PROJECT_ID.firebaseapp.com",
-  projectId: "GANTI_DENGAN_PROJECT_ID",
-  storageBucket: "GANTI_DENGAN_PROJECT_ID.appspot.com",
-  messagingSenderId: "GANTI_DENGAN_SENDER_ID",
-  appId: "GANTI_DENGAN_APP_ID",
+  apiKey: "AIzaSyDky7_IqTUCtrT9_No64toFFdrjlRNneyI",
+  authDomain: "medis-sekolah.firebaseapp.com",
+  databaseURL: "https://medis-sekolah-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "medis-sekolah",
+  storageBucket: "medis-sekolah.firebasestorage.app",
+  messagingSenderId: "666320549362",
+  appId: "1:666320549362:web:b7f3e1247a78f07c63676b",
+  measurementId: "G-FN9YXZ43L4"
 };
 // ============================================================================
 
