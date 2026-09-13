@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Formulir Data Kesehatan & Kontak Peserta</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__row">
+    <div class="topbar__brand">
+      <span class="topbar__mark topbar__mark--pulse" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M11 2h2v9h9v2h-9v9h-2v-9H2v-2h9z"/></svg>
+      </span>
+      <div>
+        <p class="topbar__title">Data Kesehatan &amp; Kontak Peserta</p>
+        <p class="topbar__subtitle">Wajib diisi oleh seluruh peserta kegiatan</p>
+      </div>
+    </div>
+    <button type="button" id="soundToggleBtn" class="sound-toggle" aria-pressed="true" title="Aktifkan/matikan efek suara">🔊</button>
+  </div>
+  <div class="ecg-strip" aria-hidden="true">
+    <svg class="ecg-strip__svg" viewBox="0 0 600 40" preserveAspectRatio="none">
+      <polyline class="ecg-strip__line" fill="none" stroke-width="2" points="0,20 60,20 75,20 85,4 95,36 105,20 120,20 160,20 175,20 185,4 195,36 205,20 220,20 260,20 275,20 285,4 295,36 305,20 320,20 360,20 375,20 385,4 395,36 405,20 420,20 460,20 475,20 485,4 495,36 505,20 520,20 560,20 575,20 585,4 595,36 600,20" />
+    </svg>
+  </div>
+</header>
+
+<div id="reminderBanner" class="reminder-banner" hidden>
+  <div class="reminder-banner__icon" aria-hidden="true">🔔</div>
+  <div class="reminder-banner__body">
+    <p class="reminder-banner__title" id="reminderBannerTitle">Alarm Pengingat Perlengkapan Obat, Ibadah &amp; Mandi</p>
+    <p class="reminder-banner__text" id="reminderBannerText"></p>
+  </div>
+  <div class="reminder-banner__actions">
+    <a id="reminderWaBtn" class="btn btn--primary btn--small" href="#" target="_blank" rel="noopener">Kirim pengingat WhatsApp</a>
+    <button type="button" id="reminderDismiss" class="btn btn--ghost btn--small">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ SUSULAN PERLENGKAPAN (ditampilkan bila peserta sudah pernah mengisi formulir utama, dan jendela waktu sedang terbuka) ============ -->
+<div id="suppliesFollowup" class="wrap" hidden>
+  <div class="pulse-badge" aria-hidden="true"><span></span><span></span><span></span></div>
+  <h2 class="step__title">Lengkapi Perlengkapan Obat, Ibadah &amp; Mandi</h2>
+  <p class="step__desc" id="suppliesFollowupDesc">Halo! Sekarang jendela waktu pengisian perlengkapan sudah dibuka. Yuk lengkapi datamu.</p>
+
+  <div class="checklist-card">
+    <p class="checklist-card__title">Perlengkapan ibadah</p>
+    <div class="checklist" id="fuPrayerGearList">
+      <label><input type="checkbox" name="fu_prayer_gear" value="Mukena / Sarung" /> Mukena / Sarung</label>
+      <label><input type="checkbox" name="fu_prayer_gear" value="Sajadah" /> Sajadah</label>
+      <label><input type="checkbox" name="fu_prayer_gear" value="Peci / Kerudung" /> Peci / Kerudung</label>
+      <label><input type="checkbox" name="fu_prayer_gear" value="Al-Qur'an / Juz Amma" /> Al-Qur'an / Juz Amma</label>
+    </div>
+    <input type="text" class="checklist__other" id="fuPrayerGearOther" placeholder="Lainnya (opsional)" />
+  </div>
+
+  <div class="checklist-card">
+    <p class="checklist-card__title">Perlengkapan mandi</p>
+    <div class="checklist" id="fuToiletriesList">
+      <label><input type="checkbox" name="fu_toiletries" value="Sabun" /> Sabun</label>
+      <label><input type="checkbox" name="fu_toiletries" value="Shampo" /> Shampo</label>
+      <label><input type="checkbox" name="fu_toiletries" value="Sikat & Pasta Gigi" /> Sikat &amp; Pasta Gigi</label>
+      <label><input type="checkbox" name="fu_toiletries" value="Handuk" /> Handuk</label>
+    </div>
+    <input type="text" class="checklist__other" id="fuToiletriesOther" placeholder="Lainnya (opsional)" />
+  </div>
+
+  <div class="field">
+    <div class="field__header">
+      <label>Obat-obatan pribadi yang dibawa</label>
+      <button type="button" class="btn-add" id="fuAddMedBtn">+ Tambah obat</button>
+    </div>
+    <div id="fuMedList"></div>
+    <p class="checklist-card__label" id="fuSupplyScheduleNote"></p>
+  </div>
+
+  <p id="suppliesFollowupError" class="submit-error" hidden></p>
+  <div class="nav-buttons">
+    <button type="button" id="fuSubmitBtn" class="btn btn--primary">Simpan Perlengkapan</button>
+  </div>
+</div>
+
+<div id="alreadySubmittedNotice" class="wrap success-box" hidden>
+  <div class="success-box__icon heartbeat-icon">✓</div>
+  <h2>Data kamu sudah tersimpan</h2>
+  <p id="alreadySubmittedText">Terima kasih, kamu sudah mengisi formulir ini sebelumnya.</p>
+  <p class="step__desc">Pengurus OSIS, peserta umum, maupun panitia tetap boleh mengubah &amp; mengirim ulang datanya kapan saja jika ada yang perlu diperbarui.</p>
+  <div class="nav-buttons">
+    <button type="button" id="editDataBtn" class="btn btn--primary">Ubah Data Saya</button>
+  </div>
+</div>
+
+<div id="suppliesFollowupDone" class="wrap success-box" hidden>
+  <div class="success-box__icon heartbeat-icon">✓</div>
+  <h2>Perlengkapan tersimpan</h2>
+  <p>Terima kasih, data perlengkapanmu sudah ditambahkan.</p>
+</div>
+
+<div class="progress" role="progressbar" aria-label="Progres pengisian formulir">
+  <div class="progress__track"><div class="progress__fill" id="progressFill"></div></div>
+  <p class="progress__label" id="progressLabel">Langkah 1 dari 6 — Data Diri</p>
+</div>
+
+<main class="wrap">
+  <div id="editModeBanner" class="window-banner window-banner--open" hidden>Kamu sedang mengubah data yang sudah tersimpan sebelumnya. Data lama sudah dimuat ke formulir di bawah — silakan perbarui lalu kirim ulang.</div>
+  <form id="regForm" novalidate>
+
+    <!-- STEP 1: DATA DIRI -->
+    <section class="step" data-step="1">
+      <h2 class="step__title">Data Diri</h2>
+      <p class="step__desc">Isikan data dirimu sesuai dengan data sekolah.</p>
+
+      <div class="field">
+        <label for="full_name">Nama lengkap</label>
+        <input type="text" id="full_name" name="full_name" required autocomplete="name" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="class">Kelas</label>
+          <input type="text" id="class" name="class" list="classOptions" placeholder="X/XI/XII MPLB/OTKP" required />
+          <datalist id="classOptions">
+            <option value="X MPLB"></option>
+            <option value="XI MPLB"></option>
+            <option value="XII MPLB"></option>
+            <option value="X OTKP"></option>
+            <option value="XI OTKP"></option>
+            <option value="XII OTKP"></option>
+          </datalist>
+        </div>
+        <div class="field">
+          <label for="major">Program keahlian / jurusan</label>
+          <input type="text" id="major" name="major" list="majorOptions" placeholder="Manajemen Perkantoran dan Layanan Bisnis / Otomatisasi dan Tata Kelola Perkantoran" required />
+          <datalist id="majorOptions">
+            <option value="Manajemen Perkantoran dan Layanan Bisnis"></option>
+            <option value="Otomatisasi dan Tata Kelola Perkantoran"></option>
+          </datalist>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="role">Peran dalam kegiatan</label>
+        <select id="role" name="role" required>
+          <option value="" disabled selected>Pilih peran</option>
+          <option value="Pengurus OSIS">Pengurus OSIS</option>
+          <option value="Peserta Umum">Peserta Umum</option>
+          <option value="Panitia">Panitia</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- STEP 2: KONTAK -->
+    <section class="step" data-step="2" hidden>
+      <h2 class="step__title">Kontak</h2>
+      <p class="step__desc">Kontak ini akan digunakan panitia jika terjadi hal darurat.</p>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="participant_phone">No. HP kamu</label>
+          <input type="tel" id="participant_phone" name="participant_phone" placeholder="08xxxxxxxxxx" required />
+        </div>
+        <div class="field">
+          <label for="participant_email">Email kamu (opsional)</label>
+          <input type="email" id="participant_email" name="participant_email" />
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <h3 class="subheading">Orang tua / Wali</h3>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="guardian_name">Nama orang tua / wali</label>
+          <input type="text" id="guardian_name" name="guardian_name" required />
+        </div>
+        <div class="field">
+          <label for="guardian_relation">Hubungan dengan kamu</label>
+          <select id="guardian_relation" name="guardian_relation" required>
+            <option value="">Pilih hubungan</option>
+            <option>Ayah</option>
+            <option>Ibu</option>
+            <option>Wali</option>
+            <option>Lainnya</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="guardian_phone">No. HP orang tua / wali (utama)</label>
+          <input type="tel" id="guardian_phone" name="guardian_phone" placeholder="08xxxxxxxxxx" required />
+        </div>
+        <div class="field">
+          <label for="guardian_alt_phone">No. HP alternatif (opsional)</label>
+          <input type="tel" id="guardian_alt_phone" name="guardian_alt_phone" placeholder="08xxxxxxxxxx" />
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <h3 class="subheading">Hubungi Otomatis</h3>
+      <p class="step__desc" style="margin-bottom:12px;">Pilih guru atau staf medis yang ingin dihubungi otomatis lewat WhatsApp saat data ini terkirim.</p>
+
+      <div class="field">
+        <label for="target_staff">Guru / Staf medis</label>
+        <select id="target_staff" name="target_staff" required>
+          <option value="" disabled selected>Memuat daftar guru/staf...</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- STEP 3: KESEHATAN -->
+    <section class="step" data-step="3" hidden>
+      <h2 class="step__title">Kondisi Kesehatan</h2>
+      <p class="step__desc">Informasi ini membantu panitia menjaga keselamatanmu selama kegiatan.</p>
+
+      <div class="field">
+        <label for="medical_conditions">Kondisi medis khusus (jika ada)</label>
+        <textarea id="medical_conditions" name="medical_conditions" rows="3" placeholder="contoh: asma, riwayat maag, tidak ada"></textarea>
+      </div>
+
+      <div class="alert-box">
+        <p class="alert-box__title">Alergi</p>
+
+        <div class="yesno-field">
+          <p>Apakah kamu memiliki alergi obat?</p>
+          <div class="yesno" data-target="has_drug_allergy">
+            <label><input type="radio" name="has_drug_allergy" value="yes" /> Ya</label>
+            <label><input type="radio" name="has_drug_allergy" value="no" checked /> Tidak</label>
+          </div>
+          <div class="reveal" id="reveal_drug_allergy" hidden>
+            <input type="text" name="drug_allergy_detail" placeholder="Sebutkan nama obat yang menyebabkan alergi" />
+          </div>
+        </div>
+
+        <div class="yesno-field">
+          <p>Apakah kamu memiliki alergi makanan?</p>
+          <div class="yesno" data-target="has_food_allergy">
+            <label><input type="radio" name="has_food_allergy" value="yes" /> Ya</label>
+            <label><input type="radio" name="has_food_allergy" value="no" checked /> Tidak</label>
+          </div>
+          <div class="reveal" id="reveal_food_allergy" hidden>
+            <input type="text" name="food_allergy_detail" placeholder="Sebutkan makanan yang menyebabkan alergi" />
+          </div>
+        </div>
+
+        <div class="yesno-field">
+          <p>Alergi lainnya (debu, cuaca dingin, dll)?</p>
+          <div class="yesno" data-target="has_other_allergy">
+            <label><input type="radio" name="has_other_allergy" value="yes" /> Ya</label>
+            <label><input type="radio" name="has_other_allergy" value="no" checked /> Tidak</label>
+          </div>
+          <div class="reveal" id="reveal_other_allergy" hidden>
+            <input type="text" name="other_allergy_detail" placeholder="Sebutkan alergi lainnya" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4: PERLENGKAPAN -->
+    <section class="step" data-step="4" hidden>
+      <h2 class="step__title">Perlengkapan Obat, Ibadah &amp; Mandi</h2>
+      <p class="step__desc">Boleh diisi H-1 sebelum acara atau saat acara berlangsung, sesuai jadwal yang ditentukan guru/staf medis.</p>
+
+      <div id="supplyWindowBanner" class="window-banner" hidden></div>
+      <p class="info-note" id="supplyScheduleDetail" hidden></p>
+
+      <div id="supplyFieldsWrap">
+      <div class="field">
+        <div class="field__header">
+          <label>Obat-obatan pribadi yang dibawa</label>
+          <button type="button" class="btn-add" id="addMedBtn">+ Tambah obat</button>
+        </div>
+        <div id="medList"></div>
+        <p class="checklist-card__label" id="medScheduleNote"></p>
+      </div>
+
+      <div class="checklist-card">
+        <p class="checklist-card__title">Perlengkapan ibadah</p>
+        <div class="checklist" id="prayerGearList">
+          <label><input type="checkbox" name="prayer_gear" value="Mukena / Sarung" /> Mukena / Sarung</label>
+          <label><input type="checkbox" name="prayer_gear" value="Sajadah" /> Sajadah</label>
+          <label><input type="checkbox" name="prayer_gear" value="Peci / Kerudung" /> Peci / Kerudung</label>
+          <label><input type="checkbox" name="prayer_gear" value="Al-Qur'an / Juz Amma" /> Al-Qur'an / Juz Amma</label>
+        </div>
+        <input type="text" class="checklist__other" id="prayerGearOther" placeholder="Lainnya (opsional)" />
+        <p class="checklist-card__label">Diisi pada:</p>
+        <div class="yesno">
+          <label><input type="radio" name="prayer_gear_timing" value="H-1 (sehari sebelum acara)" checked /> H-1 (sehari sebelum acara)</label>
+          <label><input type="radio" name="prayer_gear_timing" value="Saat acara berlangsung" /> Saat acara berlangsung</label>
+        </div>
+      </div>
+
+      <div class="checklist-card">
+        <p class="checklist-card__title">Perlengkapan mandi</p>
+        <div class="checklist" id="toiletriesList">
+          <label><input type="checkbox" name="toiletries" value="Sabun" /> Sabun</label>
+          <label><input type="checkbox" name="toiletries" value="Shampo" /> Shampo</label>
+          <label><input type="checkbox" name="toiletries" value="Sikat & Pasta Gigi" /> Sikat &amp; Pasta Gigi</label>
+          <label><input type="checkbox" name="toiletries" value="Handuk" /> Handuk</label>
+        </div>
+        <input type="text" class="checklist__other" id="toiletriesOther" placeholder="Lainnya (opsional)" />
+        <p class="checklist-card__label">Diisi pada:</p>
+        <div class="yesno">
+          <label><input type="radio" name="toiletries_timing" value="H-1 (sehari sebelum acara)" checked /> H-1 (sehari sebelum acara)</label>
+          <label><input type="radio" name="toiletries_timing" value="Saat acara berlangsung" /> Saat acara berlangsung</label>
+        </div>
+      </div>
+      </div><!-- /#supplyFieldsWrap -->
+    </section>
+
+    <!-- STEP 5: KESEJAHTERAAN -->
+    <section class="step" data-step="5" hidden>
+      <h2 class="step__title">Sebelum Lanjut...</h2>
+      <p class="step__desc">Pertanyaan ini bersifat rahasia dan hanya dapat dilihat oleh panitia/guru yang berwenang.</p>
+
+      <div class="wellbeing-card">
+        <p class="wellbeing-card__q">Apakah kamu sedang memiliki masalah pribadi dengan orang tua atau orang lain?</p>
+        <div class="yesno" data-target="has_personal_issue">
+          <label><input type="radio" name="has_personal_issue" value="yes" /> Ya</label>
+          <label><input type="radio" name="has_personal_issue" value="no" checked /> Tidak</label>
+        </div>
+
+        <div id="issueFollowup" class="reveal" hidden>
+          <p class="wellbeing-card__q">Apakah kamu ingin menjelaskan / menceritakan detailnya kepada panitia?</p>
+          <div class="yesno" data-target="wants_to_explain">
+            <label><input type="radio" name="wants_to_explain" value="yes" /> Ya, saya ingin menjelaskan</label>
+            <label><input type="radio" name="wants_to_explain" value="no" /> Tidak untuk saat ini</label>
+          </div>
+
+          <div id="issueDetailBox" class="reveal" hidden>
+            <label for="issue_detail">Ceritakan secara singkat</label>
+            <textarea id="issue_detail" name="issue_detail" rows="4" placeholder="Tulis apa yang ingin kamu sampaikan..."></textarea>
+          </div>
+
+          <div id="issueTeacherNote" class="info-note" hidden>
+            Tidak apa-apa, kamu tidak perlu menjelaskannya sekarang. Jika suatu saat kamu membutuhkan bantuan,
+            silakan hubungi <strong id="teacherNameLabel">guru/staf yang kamu pilih</strong> —
+            <a id="teacherWaLink" href="#" target="_blank" rel="noopener">chat WhatsApp di sini</a>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 6: REVIEW -->
+    <section class="step" data-step="6" hidden>
+      <h2 class="step__title">Periksa Kembali</h2>
+      <p class="step__desc">Pastikan data yang kamu isi sudah benar sebelum mengirim.</p>
+      <div id="reviewBox" class="review-box"></div>
+      <p id="submitError" class="submit-error" hidden></p>
+    </section>
+
+    <div class="nav-buttons">
+      <button type="button" id="btnBack" class="btn btn--ghost">Kembali</button>
+      <button type="button" id="btnNext" class="btn btn--primary">Lanjut</button>
+      <button type="submit" id="btnSubmit" class="btn btn--primary" hidden>Kirim Data</button>
+    </div>
+  </form>
+
+  <div id="successBox" class="success-box" hidden>
+    <div class="success-box__icon heartbeat-icon">✓</div>
+    <h2>Data berhasil dikirim</h2>
+    <p>Terima kasih. Datamu telah tersimpan di server panitia.</p>
+    <p id="successContactNote" class="info-note" hidden></p>
+    <p id="successSuppliesNote" class="info-note" hidden></p>
+    <p id="successPlanNote" class="info-note" hidden></p>
+  </div>
+</main>
+
+<footer class="footer">
+  <p>&copy; <span id="year"></span> Rizky Ahmed Darmawan. All rights reserved.</p>
+  <p><a href="admin.html" class="footer__admin-link">Portal Guru / Staf Medis</a></p>
+</footer>
+
+<script src="assets/vendor/firebase-app-compat.js"></script>
+<script src="assets/vendor/firebase-auth-compat.js"></script>
+<script src="assets/vendor/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-init.js"></script>
+<script src="assets/js/supply-phase.js"></script>
+<script src="assets/js/sound-fx.js"></script>
+<script src="assets/js/form.js"></script>
+</body>
+</html>
