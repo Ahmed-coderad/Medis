@@ -1,0 +1,210 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------
+    // participants — data kesehatan & kontak
+    // ------------------------------------------------------------------
+    match /participants/{participantId} {
+
+      // Siapapun boleh MENGIRIM data baru lewat formulir publik.
+      // access_token dipakai supaya peserta yang sama bisa kembali mengisi
+      // perlengkapan/obat di jendela waktu H-1 / hari-H tanpa perlu login.
+      allow create: if request.resource.data.full_name is string
+                    && request.resource.data.full_name.size() > 0
+                    && request.resource.data.class is string
+                    && request.resource.data.major is string
+                    && request.resource.data.role in ['Pengurus OSIS', 'Peserta Umum', 'Panitia']
+                    && request.resource.data.guardian_name is string
+                    && request.resource.data.guardian_phone is string
+                    && request.resource.data.access_token is string
+                    && request.resource.data.access_token.size() >= 12;
+
+      // Admin (guru/staf medis) yang sudah login: boleh baca, ubah, hapus semua.
+      // Peserta pemilik data (tanpa login) — Pengurus OSIS, Peserta Umum,
+      // maupun Panitia — boleh MENGUBAH & MENGIRIM ULANG seluruh datanya
+      // sendiri kapan saja setelah pengiriman pertama (bukan cuma
+      // menyusulkan perlengkapan/obat), HANYA jika access_token yang
+      // dikirim balik cocok dengan yang tersimpan (artinya dia yang mengisi
+      // formulir ini di perangkat yang sama), dan dokumen hasil perubahan
+      // tetap memenuhi syarat data wajib yang sama seperti saat pengiriman
+      // pertama (create). target_staff_id/name/whatsapp WAJIB tetap sama
+      // dengan yang tersimpan — formulir sudah mengunci field ini di sisi
+      // klien saat "Kirim Perubahan" (lihat form.js, targetStaffLockedField),
+      // tapi aturan ini memastikan penguncian itu juga berlaku kalau ada
+      // yang mencoba mengirim permintaan langsung tanpa lewat formulir.
+      allow update: if request.auth != null
+                    || (
+                      request.resource.data.access_token == resource.data.access_token
+                      && request.resource.data.full_name is string
+                      && request.resource.data.full_name.size() > 0
+                      && request.resource.data.class is string
+                      && request.resource.data.major is string
+                      && request.resource.data.role in ['Pengurus OSIS', 'Peserta Umum', 'Panitia']
+                      && request.resource.data.guardian_name is string
+                      && request.resource.data.guardian_phone is string
+                      && request.resource.data.target_staff_id == resource.data.target_staff_id
+                      && request.resource.data.target_staff_name == resource.data.target_staff_name
+                      && request.resource.data.target_staff_whatsapp == resource.data.target_staff_whatsapp
+                    );
+
+      // Peserta tidak pernah perlu MEMBACA balik dokumennya — data yang ia
+      // isi sendiri sudah disimpan di localStorage perangkatnya untuk
+      // ditampilkan ulang. Hanya admin yang login yang boleh membaca.
+      allow read: if request.auth != null;
+
+      allow delete: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------------
+    // staff — direktori guru/staf medis yang bisa dipilih peserta.
+    // Nama, peran, dan nomor WA bersifat semi-publik (dibutuhkan formulir
+    // peserta untuk fitur "hubungi otomatis"), tapi hanya admin yang bisa
+    // menambah/mengubah/menghapus.
+    // ------------------------------------------------------------------
+    match /staff/{staffId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------------
+    // settings — jadwal jendela pengisian perlengkapan/obat, dsb.
+    // Dibaca publik oleh formulir peserta, hanya admin yang bisa mengubah.
+    // ------------------------------------------------------------------
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------------
+    // contactLog — jejak audit "hubungi" dari panel admin & auto-contact
+    // saat formulir dikirim.
+    // ------------------------------------------------------------------
+    match /contactLog/{logId} {
+      allow create: if true;
+      allow read, delete: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------------
+    // admin_accounts — metadata admin tambahan (guru/staf/panitia) yang
+    // dibuat lewat tab "Akun Admin" di panel admin (bukan lewat Firebase
+    // Console langsung). Dokumen di sini HANYA berisi metadata (user_id,
+    // label, pembuat, waktu dibuat) — kata sandi sesungguhnya tetap
+    // dikelola penuh oleh Firebase Authentication, tidak pernah disimpan
+    // di Firestore.
+    //
+    // Akun yang TIDAK punya dokumen di sini dianggap "akun utama/bawaan
+    // sistem" (dibuat langsung lewat Firebase Console saat pengaturan
+    // awal) — panel admin sengaja menyembunyikannya dari daftar & tidak
+    // menampilkan opsi ubah password untuk akun tsb, dan hanya akun inilah
+    // yang boleh masuk lewat Email. Siapapun boleh menghapus dokumen di
+    // sini (mis. admin lain menonaktifkan suatu akun tambahan) — ini
+    // "menonaktifkan" login User ID akun tsb; akun Firebase Auth-nya
+    // sendiri tetap perlu dihapus manual lewat Firebase Console bila ingin
+    // benar-benar dihapus total (batasan situs statis tanpa Admin SDK).
+    // ------------------------------------------------------------------
+    match /admin_accounts/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.user_id is string
+                    && request.resource.data.user_id.size() > 0;
+      allow update: if request.auth != null
+                    && (request.auth.uid == uid || request.auth.token.email == 'rizkyahmeddarmawan98@gmail.com');
+      allow delete: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------------
+    // wellbeing_notes — isi jawaban "Ceritakan secara singkat" dari Step 5
+    // (kesejahteraan peserta). SENGAJA dipisah dari dokumen /participants
+    // karena Firestore Security Rules tidak bisa membatasi akses per-field
+    // dalam satu dokumen — satu-satunya cara membuat suatu isian HANYA
+    // bisa dibaca oleh guru/staf tertentu (bukan semua admin) adalah
+    // menyimpannya sebagai dokumen terpisah dengan aturan baca sendiri.
+    // ID dokumen di sini SAMA PERSIS dengan ID dokumen peserta terkait di
+    // /participants, supaya mudah dicari (satu peserta = maksimal satu
+    // catatan). target_staff_id di sini selalu disalin dari pilihan
+    // "Guru / Staf Medis" peserta yang sudah dikunci di formulir, dan
+    // tidak boleh diganti lewat update (lihat allow update di bawah).
+    // ------------------------------------------------------------------
+    match /wellbeing_notes/{participantId} {
+      allow create: if request.resource.data.issue_detail is string
+                    && request.resource.data.target_staff_id is string
+                    && request.resource.data.target_staff_id.size() > 0
+                    && request.resource.data.access_token is string
+                    && request.resource.data.access_token.size() >= 12;
+
+      // Peserta boleh memperbarui/mengosongkan ceritanya sendiri (mis. saat
+      // "Kirim Perubahan") selama access_token cocok — persis pola yang
+      // sama seperti /participants — dan target_staff_id tidak berubah,
+      // konsisten dengan penguncian pilihan guru di formulir.
+      allow update: if request.resource.data.access_token == resource.data.access_token
+                    && request.resource.data.target_staff_id == resource.data.target_staff_id;
+
+      // HANYA admin utama (pemilik sistem) atau akun admin yang staff_id-nya
+      // (di /admin_accounts) cocok dengan target_staff_id catatan ini yang
+      // boleh membacanya — bukan sembarang admin yang sedang login.
+      allow read: if request.auth != null
+                  && (
+                    request.auth.token.email == 'rizkyahmeddarmawan98@gmail.com'
+                    || (
+                      exists(/databases/$(database)/documents/admin_accounts/$(request.auth.uid))
+                      && get(/databases/$(database)/documents/admin_accounts/$(request.auth.uid)).data.staff_id == resource.data.target_staff_id
+                    )
+                  );
+
+      // Admin manapun yang login boleh menghapus (dipakai saat "Hapus Data"
+      // peserta di panel admin ikut menghapus catatan kesejahteraannya —
+      // lihat admin.js, deleteRecordById — supaya tidak ada cerita yang
+      // tertinggal yatim piatu di Firestore setelah datanya "dihapus").
+      // Sengaja TIDAK dibatasi hanya guru yang ditautkan, sama seperti
+      // /participants: siapa pun admin yang berwenang menghapus data
+      // peserta juga berwenang menghapus catatan terkaitnya.
+      allow delete: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------------
+    // admin_login_index — pemetaan publik "User ID -> email sintetis"
+    // untuk akun tambahan, supaya proses MASUK (sign-in) bisa
+    // menerjemahkan User ID ke email Firebase Auth SEBELUM pengguna
+    // login (saat itu request.auth masih null). Dokumen di sini tidak
+    // berisi password apa pun — hanya UID & email sintetis internal yang
+    // sendirian tidak berguna tanpa password yang benar, jadi aman dibaca
+    // publik (setara dengan "username publik" di banyak sistem lain).
+    // Hanya admin yang sudah login yang boleh menulis/menghapusnya.
+    // ------------------------------------------------------------------
+    match /admin_login_index/{userId} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+                    && request.resource.data.uid is string
+                    && request.resource.data.internal_email is string;
+      allow delete: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------------
+    // event_health_logs — catatan kondisi kesehatan yang dicatat langsung
+    // oleh guru/staf medis SELAMA acara berlangsung (berbeda dari data
+    // isian awal peserta di /participants). Dipakai untuk menyusun
+    // laporan medis kegiatan lewat tab "Catatan Kesehatan Acara" di panel
+    // admin. Sepenuhnya privat — hanya admin yang login yang boleh
+    // membaca & menulis; formulir peserta publik tidak pernah mengakses
+    // koleksi ini.
+    // ------------------------------------------------------------------
+    match /event_health_logs/{logId} {
+      allow read, update, delete: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.participant_name is string
+                    && request.resource.data.participant_name.size() > 0
+                    && request.resource.data.condition is string
+                    && request.resource.data.condition.size() > 0
+                    && request.resource.data.action_taken is string
+                    && request.resource.data.action_taken.size() > 0
+                    && request.resource.data.severity in ['Ringan', 'Sedang', 'Berat'];
+    }
+
+    // Tolak akses ke koleksi lain yang tidak didefinisikan di atas.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
